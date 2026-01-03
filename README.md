@@ -8,17 +8,17 @@ The game is fully playable and technically functional, serving as a foundation f
 
 # Core Features
 
-Momentum-driven horizontal movement
+* Momentum-driven horizontal movement
 
-Jumping, dashing, and wall-jumping mechanics
+* Jumping, dashing, and wall-jumping mechanics
 
-Gradually increasing difficulty across levels
+* Gradually increasing difficulty across levels
 
-Clear win conditions and level progression
+* Clear win conditions and level progression
 
-Keyboard-based controls
+* Keyboard-based controls
 
-Runs locally in the browser (HTML5 Canvas)
+* Runs locally in the browser (HTML5 Canvas)
 
 # Purpose of This Project
 
@@ -26,45 +26,45 @@ This project was intentionally designed as a working but imperfect system.
 
 Slipstream Runner demonstrates how AI-generated games can:
 
-Correctly implement core mechanics
+* Correctly implement core mechanics
 
-Establish clear goals and progression
+* Establish clear goals and progression
 
-Produce a complete, playable experience
+* Produce a complete, playable experience
 
 At the same time, it highlights common AI limitations:
 
-Movement tuning that lacks precision
+* Movement tuning that lacks precision
 
-Mechanics that coexist without strong synergy
+* Mechanics that coexist without strong synergy
 
-Feedback systems that communicate state but may reduce readability
+* Feedback systems that communicate state but may reduce readability
 
 These qualities make Slipstream Runner a valuable evaluation artifact for analyzing AI-generated gameplay rather than a finished commercial product.
 
 # Technical Details
 
-Built with HTML, CSS, and vanilla JavaScript
+* Built with HTML, CSS, and vanilla JavaScript
 
-Uses HTML5 Canvas for rendering
+* Uses HTML5 Canvas for rendering
 
-No external libraries or frameworks
+* No external libraries or frameworks
 
-Runs by opening index.html locally
+* Runs by opening index.html locally
 
 # Design Evaluation Focus
 
 This project is used to evaluate:
 
-Momentum and control feel
+* Momentum and control feel
 
-Player agency vs. automation
+* Player agency vs. automation
 
-Visual feedback effectiveness
+* Visual feedback effectiveness
 
-Skill ceiling and mastery potential
+* Skill ceiling and mastery potential
 
-AI-generated system completeness vs. polish
+* AI-generated system completeness vs. polish
 
 # Status
 
