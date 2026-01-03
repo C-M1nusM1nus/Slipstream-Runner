@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Slipstream Runner</title>
+
+<!--
+Slipstream Runner
+Controls:
+A / D  - Move left / right
+W      - Jump (also wall jump)
+Shift  - Dash (mid-air)
+
+Goal:
+Reach the GREEN goal zone.
+Avoid RED hazards.
+Momentum is preserved — keep your speed!
+-->
+
+<style>
+    body {
+        margin: 0;
+        background: #0e0e11;
+        color: white;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+        margin: 0 auto;
+        background: linear-gradient(#141420, #0a0a12);
+    }
+</style>
+</head>
+<body>
+<canvas id="game" width="960" height="540"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const keys = {};
+window.addEventListener("keydown", e => keys[e.code] = true);
+window.addEventListener("keyup", e => keys[e.code] = false);
+
+/* ------------------ PLAYER ------------------ */
+const player = {
+    x: 50, y: 400,
+    w: 28, h: 40,
+    vx: 0, vy: 0,
+    onGround: false,
+    canDash: true,
+    facing: 1
+};
+
+const physics = {
+    gravity: 0.7,
+    accel: 0.6,
+    maxSpeed: 8,
+    airControl: 0.35,
+    friction: 0.8,
+    jumpPower: 14,
+    dashPower: 12
+};
+
+/* ------------------ LEVELS ------------------ */
+const levels = [
+    {
+        text: "Level 1: Build momentum\nA/D move  •  W jump",
+        platforms: [
+            [0, 500, 1000, 40],
+            [300, 420, 120, 20],
+            [500, 360, 120, 20],
+            [700, 300, 120, 20]
+        ],
+        hazards: [
+            [420, 500, 80, 40]
+        ],
+        goal: [880, 260, 40, 40]
+    },
+    {
+        text: "Level 2: Dash\nShift to dash mid-air",
+        platforms: [
+            [0, 500, 1000, 40],
+            [260, 420, 120, 20],
+            [460, 340, 120, 20],
+            [660, 260, 120, 20]
+        ],
+        hazards: [
+            [360, 500, 80, 40],
+            [560, 500, 80, 40]
+        ],
+        goal: [860, 220, 40, 40]
+    },
+    {
+        text: "Level 3: Full speed\nChain jumps, walls, and dash",
+        platforms: [
+            [0, 500, 1000, 40],
+            [200, 420, 40, 120],
+            [360, 340, 120, 20],
+            [540, 280, 40, 120],
+            [700, 240, 120, 20]
+        ],
+        hazards: [
+            [300, 500, 80, 40],
+            [600, 500, 80, 40]
+        ],
+        goal: [860, 200, 40, 40]
+    }
+];
+
+let currentLevel = 0;
+
+/* ------------------ HELPERS ------------------ */
+function resetPlayer() {
+    player.x = 50;
+    player.y = 400;
+    player.vx = 0;
+    player.vy = 0;
+    player.canDash = true;
+}
+
+function rectsCollide(a, b) {
+    return a.x < b.x + b.w &&
+           a.x + a.w > b.x &&
+           a.y < b.y + b.h &&
+           a.y + a.h > b.y;
+}
+
+/* ------------------ UPDATE ------------------ */
+function update() {
+    const level = levels[currentLevel];
+    const prevY = player.y;
+
+    /* INPUT */
+    let accel = physics.accel;
+    if (!player.onGround) accel *= physics.airControl;
+
+    if (keys["KeyA"]) {
+        player.vx -= accel;
+        player.facing = -1;
+    }
+    if (keys["KeyD"]) {
+        player.vx += accel;
+        player.facing = 1;
+    }
+
+    if (keys["KeyW"] && player.onGround) {
+        player.vy = -physics.jumpPower;
+        player.onGround = false;
+    }
+
+    if (keys["ShiftLeft"] && player.canDash && !player.onGround) {
+        player.vx = physics.dashPower * player.facing;
+        player.canDash = false;
+    }
+
+    /* PHYSICS */
+    player.vy += physics.gravity;
+
+    if (player.onGround && !keys["KeyA"] && !keys["KeyD"]) {
+        player.vx *= physics.friction;
+    }
+
+    player.vx = Math.max(-physics.maxSpeed, Math.min(physics.maxSpeed, player.vx));
+
+    player.x += player.vx;
+    player.y += player.vy;
+
+    player.onGround = false;
+
+    /* COLLISIONS */
+    for (let p of level.platforms) {
+        const plat = { x: p[0], y: p[1], w: p[2], h: p[3] };
+        if (rectsCollide(player, plat)) {
+            if (player.vy > 0 && player.y + player.h - player.vy <= plat.y) {
+                player.y = plat.y - player.h;
+                player.vy = 0;
+                player.onGround = true;
+                player.canDash = true;
+            } else if (player.vx > 0) {
+                player.x = plat.x - player.w;
+                if (keys["KeyW"]) {
+                    player.vy = -physics.jumpPower;
+                    player.vx = -physics.maxSpeed;
+                }
+            } else if (player.vx < 0) {
+                player.x = plat.x + plat.w;
+                if (keys["KeyW"]) {
+                    player.vy = -physics.jumpPower;
+                    player.vx = physics.maxSpeed;
+                }
+            }
+        }
+    }
+
+    /* HAZARDS — swept vertical check */
+    for (let h of level.hazards) {
+        const hx = h[0], hy = h[1], hw = h[2], hh = h[3];
+
+        const horizontalOverlap =
+            player.x < hx + hw &&
+            player.x + player.w > hx;
+
+        const crossedFromAbove =
+            prevY + player.h <= hy &&
+            player.y + player.h >= hy;
+
+        const insideVertically =
+            player.y < hy + hh &&
+            player.y + player.h > hy;
+
+        if (horizontalOverlap && (crossedFromAbove || insideVertically)) {
+            resetPlayer();
+            return;
+        }
+    }
+
+
+    /* GOAL */
+    const g = level.goal;
+    if (rectsCollide(player, {x:g[0],y:g[1],w:g[2],h:g[3]})) {
+        currentLevel = (currentLevel + 1) % levels.length;
+        resetPlayer();
+    }
+
+    /* FALL */
+    if (player.y > canvas.height + 200) resetPlayer();
+}
+
+/* ------------------ DRAW ------------------ */
+function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    const speed = Math.abs(player.vx);
+    if (speed > 5) {
+        ctx.fillStyle = `rgba(255,255,255,${(speed-5)/5})`;
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    const level = levels[currentLevel];
+
+    ctx.fillStyle = "#888";
+    level.platforms.forEach(p => ctx.fillRect(...p));
+
+    ctx.fillStyle = "#c33";
+    level.hazards.forEach(h => ctx.fillRect(...h));
+
+    ctx.fillStyle = "#3f3";
+    ctx.fillRect(...level.goal);
+
+    ctx.fillStyle = "#4af";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.fillText(level.text, 20, 30);
+    ctx.fillText("Speed: " + speed.toFixed(1), 20, 55);
+}
+
+/* ------------------ LOOP ------------------ */
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
